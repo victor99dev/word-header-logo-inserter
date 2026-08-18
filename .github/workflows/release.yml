@@ -1,0 +1,200 @@
+name: release project
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+env:
+  PROJECT_PATH: ./src/Cabecalho.LogoInserter.csproj
+  PUBLISH_DIR: ./publish
+  DIST_DIR: ./dist
+  DOTNET_VERSION: "8.0.x"
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-2025
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Obter versão
+        shell: pwsh
+        run: |
+          $version = dotnet msbuild "${{ env.PROJECT_PATH }}" -getProperty:Version
+
+          $version = $version.Trim()
+
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw "Version não encontrada no projeto."
+          }
+
+          $tag = "v$version"
+
+          Write-Host "Version: $version"
+          Write-Host "Tag:     $tag"
+
+          "APP_VERSION=$version" >> $env:GITHUB_ENV
+          "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
+
+      - name: Restore
+        shell: pwsh
+        run: |
+          dotnet restore "${{ env.PROJECT_PATH }}"
+
+      - name: Build
+        shell: pwsh
+        run: |
+          dotnet build "${{ env.PROJECT_PATH }}" `
+            -c Release `
+            --no-restore
+
+      - name: Verificar versão existente
+        if: github.event_name == 'push'
+        shell: pwsh
+        run: |
+          $existingTag = git tag --list "$env:RELEASE_TAG"
+
+          if ([string]::IsNullOrWhiteSpace($existingTag)) {
+            Write-Host "Nova versão detectada: $env:APP_VERSION"
+
+            "CREATE_RELEASE=true" >> $env:GITHUB_ENV
+          }
+          else {
+            Write-Host "Versão $env:APP_VERSION já possui a tag $env:RELEASE_TAG."
+            Write-Host "Nenhuma nova release será criada."
+
+            "CREATE_RELEASE=false" >> $env:GITHUB_ENV
+          }
+
+      - name: Publish
+        if: env.CREATE_RELEASE == 'true'
+        shell: pwsh
+        run: |
+          dotnet publish "${{ env.PROJECT_PATH }}" `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -o "${{ env.PUBLISH_DIR }}"
+
+      - name: Localizar Inno Setup
+        if: env.CREATE_RELEASE == 'true'
+        shell: pwsh
+        run: |
+          $possiblePaths = @(
+            "C:\Program Files\Inno Setup 6\ISCC.exe",
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 7\ISCC.exe",
+            "C:\Program Files (x86)\Inno Setup 7\ISCC.exe"
+          )
+
+          $iscc = $possiblePaths |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+
+          if (-not $iscc) {
+            throw "ISCC.exe não encontrado no runner."
+          }
+
+          Write-Host "Inno Setup: $iscc"
+
+          "ISCC_PATH=$iscc" >> $env:GITHUB_ENV
+
+      - name: Criar diretório dist
+        if: env.CREATE_RELEASE == 'true'
+        shell: pwsh
+        run: |
+          New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path "${{ env.DIST_DIR }}" |
+            Out-Null
+
+      - name: Gerar instalador
+        if: env.CREATE_RELEASE == 'true'
+        shell: pwsh
+        run: |
+          $setup = Join-Path "${{ github.workspace }}" "setup.iss"
+          $dist = Join-Path "${{ github.workspace }}" "dist"
+
+          if (-not (Test-Path $setup)) {
+            throw "setup.iss não encontrado: $setup"
+          }
+
+          & "$env:ISCC_PATH" `
+            "/DAppVersion=$env:APP_VERSION" `
+            "/O$dist" `
+            "/FCabecalho.LogoInserter-Setup-$env:APP_VERSION" `
+            "$setup"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Falha na geração do instalador. ISCC exit code: $LASTEXITCODE"
+          }
+
+      - name: Validar artefatos
+        if: env.CREATE_RELEASE == 'true'
+        shell: pwsh
+        run: |
+          $installer = Join-Path `
+            "${{ env.DIST_DIR }}" `
+            "Cabecalho.LogoInserter-Setup-$env:APP_VERSION.exe"
+
+          $portable = Join-Path `
+            "${{ env.DIST_DIR }}" `
+            "Cabecalho.LogoInserter-Portable-$env:APP_VERSION.zip"
+
+          if (-not (Test-Path $installer)) {
+            throw "Instalador não encontrado: $installer"
+          }
+
+          if (-not (Test-Path $portable)) {
+            throw "Portable não encontrado: $portable"
+          }
+
+          Write-Host "Artefatos:"
+          Get-ChildItem "${{ env.DIST_DIR }}"
+
+      - name: Criar tag
+        if: env.CREATE_RELEASE == 'true'
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag `
+            -a "$env:RELEASE_TAG" `
+            -m "Release $env:RELEASE_TAG"
+
+          git push origin "$env:RELEASE_TAG"
+
+      - name: Criar GitHub Release
+        if: env.CREATE_RELEASE == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $installer = Join-Path `
+            "${{ env.DIST_DIR }}" `
+            "Cabecalho.LogoInserter-Setup-$env:APP_VERSION.exe"
+
+          gh release create "$env:RELEASE_TAG" `
+            "$installer" `
+            --verify-tag `
+            --title "Cabecalho Logo Inserter $env:RELEASE_TAG" `
+            --generate-notes

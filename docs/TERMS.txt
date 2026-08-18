@@ -1,0 +1,57 @@
+TERMOS DE USO
+
+Cabecalho Logo Inserter
+
+Última atualização: agosto de 2026.
+
+Este software foi criado como um projeto de estudo e experimentação.
+
+A aplicação surgiu de uma necessidade prática de inserir automaticamente uma logomarca no cabeçalho de documentos já gerados por outro processo.
+
+O projeto também foi utilizado como estudo sobre publicação e distribuição de uma aplicação Windows, incluindo geração de executável, criação de instalador com Inno Setup e distribuição por meio de GitHub Releases.
+
+1. USO DO SOFTWARE
+
+O Cabecalho Logo Inserter é gratuito e de código aberto.
+
+O código-fonte pode ser utilizado, estudado, modificado e distribuído de acordo com os termos da licença MIT disponível no repositório do projeto.
+
+2. NATUREZA DO PROJETO
+
+Este é um projeto de estudo e experimentação.
+
+Não há garantia de continuidade, suporte, disponibilidade ou adequação para utilização em ambientes de produção.
+
+3. RESPONSABILIDADE DO USUÁRIO
+
+O software realiza alterações em documentos fornecidos pelo próprio usuário.
+
+É responsabilidade do usuário verificar os arquivos utilizados e os resultados produzidos pela aplicação.
+
+Recomenda-se manter uma cópia dos documentos originais antes de qualquer processamento.
+
+4. AUSÊNCIA DE GARANTIA
+
+O software é fornecido "como está", sem garantias expressas ou implícitas.
+
+Os autores e colaboradores não se responsabilizam por perda de arquivos, perda de dados, documentos corrompidos, incompatibilidades ou outros danos decorrentes de sua utilização.
+
+5. PRIVACIDADE
+
+Esta versão do software não possui como finalidade coletar, armazenar ou comercializar dados pessoais.
+
+Caso funcionalidades futuras alterem esse comportamento, esta informação poderá ser atualizada.
+
+6. LICENÇA
+
+O código-fonte deste projeto é disponibilizado sob a licença MIT.
+
+A licença completa está disponível no arquivo LICENSE do repositório.
+
+7. ACEITAÇÃO
+
+Ao prosseguir com a instalação e utilizar o software, o usuário declara estar ciente da natureza experimental do projeto e das condições descritas neste documento.
+
+
+Cabecalho Logo Inserter
+Projeto open source de estudo e experimentação

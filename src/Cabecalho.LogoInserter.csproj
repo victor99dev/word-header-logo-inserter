@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Cabecalho.LogoInserter</RootNamespace>
+    <AssemblyName>Cabecalho.LogoInserter</AssemblyName>
+	<Version>0.0.1</Version>
+  </PropertyGroup>
+
+</Project>
