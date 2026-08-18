@@ -73,13 +73,11 @@ jobs:
 
           if ([string]::IsNullOrWhiteSpace($existingTag)) {
             Write-Host "Nova versão detectada: $env:APP_VERSION"
-
             "CREATE_RELEASE=true" >> $env:GITHUB_ENV
           }
           else {
             Write-Host "Versão $env:APP_VERSION já possui a tag $env:RELEASE_TAG."
             Write-Host "Nenhuma nova release será criada."
-
             "CREATE_RELEASE=false" >> $env:GITHUB_ENV
           }
 
@@ -147,7 +145,7 @@ jobs:
             throw "Falha na geração do instalador. ISCC exit code: $LASTEXITCODE"
           }
 
-      - name: Validar artefatos
+      - name: Validar instalador
         if: env.CREATE_RELEASE == 'true'
         shell: pwsh
         run: |
@@ -155,20 +153,12 @@ jobs:
             "${{ env.DIST_DIR }}" `
             "Cabecalho.LogoInserter-Setup-$env:APP_VERSION.exe"
 
-          $portable = Join-Path `
-            "${{ env.DIST_DIR }}" `
-            "Cabecalho.LogoInserter-Portable-$env:APP_VERSION.zip"
-
           if (-not (Test-Path $installer)) {
             throw "Instalador não encontrado: $installer"
           }
 
-          if (-not (Test-Path $portable)) {
-            throw "Portable não encontrado: $portable"
-          }
-
-          Write-Host "Artefatos:"
-          Get-ChildItem "${{ env.DIST_DIR }}"
+          Write-Host "Instalador gerado:"
+          Get-Item $installer
 
       - name: Criar tag
         if: env.CREATE_RELEASE == 'true'
